@@ -19,10 +19,12 @@ delete(A, [A|B], B).
 delete(A, [B, C|D], [B|E]) :-
     delete(A, [C|D], E).
 
+
+
 can(Block, Object, State) :-
     member(clear(Object), State),
-    member(on(_, Block), State) =:= false,
     is_object(Object).
+
 
 
 % Define the move action for moving a block from one place to another
@@ -30,7 +32,7 @@ move(Block, From, To, InitialState, FinalState) :-
     can(Block, To, InitialState),
     delete(clear(From), InitialState, TempState),
     delete(on(Block, _), TempState, TempState2),
-    append(TempState2, [clear(To), on(Block, To)], FinalState).
+    append(InitialState, [clear(To), on(Block, To)], FinalState).
 
 % Blocks definition
 block(a).
