@@ -8,7 +8,9 @@ substitute(A, [X|As], B, [X|Bs]) :-
     substitute(A, As, B, Bs).
 
 perform(Source, move(Block, Destination), Target) :-
-    substitute(on(Block, _), Source, on(Block, Destination), Target).
+    substitute(on(Block, From), Source, on(Block, Destination), Target1),
+    append(Target1, [ clear(From) ], Target2),
+    delete(clear(Destination), Target2, Target ).
 
 is_object(Object) :-
     block(Object); place(Object).
@@ -88,6 +90,13 @@ place(4).
 
 % can(Block, Object, [on(a, b), on(b, 1), on(c, 2), clear(3), clear(4), clear(a), clear(c)]).
 % can(Block, Object, [on(a, b), on(b, 1), on(c, 2), clear(3), clear(4), clear(a)]).
-% can([on(a, b), on(b, 1), on(c, 2), clear(3), clear(4), clear(a), clear(c)], Action, [on(a, b), on(b, 1), on(c, 2), clear(3), clear(4), clear(a), clear(c)])
+% can([on(a, b), on(b, 1), on(c, 2), clear(3), clear(4), clear(a), clear(c)], Action).
+
+% perform([on(a, b), on(b, 1), on(c, 2), clear(3), clear(4), clear(a), clear(c)], move(c, a), Intermediate)
+% Intermediate = [on(a, b), on(b, 1), on(c, a), clear(3), clear(4), clear(a), clear(c)].
+
 % solve([on(a, b), on(b, 1), on(c, 2), clear(3), clear(4), clear(a), clear(c)], [on(a, b), on(b, c), on(c, 2), clear(1), clear(a), clear(3), clear(4)], Plan).
 % solve([on(a, b), on(b, 1), on(c, 2)], [on(a, b), on(b, c), on(c, 2)], Plan).
+
+% perform([on(a, b), on(b, 1), on(c, 2), clear(3), clear(4), clear(a), clear(c)], move(c, a), Intermediate).
+% Intermediate = [on(a, b), on(b, 1), on(c, a), clear(3), clear(4), clear(a), clear(c)].
