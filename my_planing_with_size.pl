@@ -30,14 +30,6 @@ delete(A, [B, C|D], [B|E]) :-
     delete(A, [C|D], E).
 
 
-can(State, move(Block, Object)) :-
-    is_object(Object),
-    block(Block),
-    Block \== Object,
-    member(clear(Block), State),
-    member(clear(Object), State).
-
-
 free(State, Thing) :-
     is_object(Thing),
     \+ member(on(_, Thing), State).
@@ -77,16 +69,39 @@ bounded_strips(Bound, Initial, Final, Visited, [Action|Actions]) :-
 
 solve(Initial, Final, Plan) :- strips(Initial, Final, Plan).
 
+
+can(State, move(Block, Object)) :-
+    is_object(Object),
+    block(Block),
+    Block \== Object.
+
+at(X,Y) :- 
+    place(X),
+    place(Y).
+
 % Blocks definition
 block(a).
 block(b).
 block(c).
+
+% Sizes
+size(a, 1).
+size(b, 1).
+size(c, 2).
+size(d, 3).
 
 % Places definition
 place(1).
 place(2).
 place(3).
 place(4).
+place(5).
+place(6).
+
+% Representation
+% inital = [ on(c, 1, 1), on(a, 4, 1), on(b, 6, 1), on(d, 4, 2) ]
+% final  = [ on(d, 4, 1), on(a, 5, 2), on(b, 6, 2), on(c,5, 3)]
+
 
 % can(Block, Object, [on(a, b), on(b, 1), on(c, 2), clear(3), clear(4), clear(a), clear(c)]).
 % can(Block, Object, [on(a, b), on(b, 1), on(c, 2), clear(3), clear(4), clear(a)]).
