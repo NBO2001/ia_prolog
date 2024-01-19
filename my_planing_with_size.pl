@@ -1,4 +1,13 @@
 
+
+substitute(_, [], _, []).
+
+substitute(A, [A|As], B, [B|Bs]) :-
+    substitute(A, As, B, Bs), !.
+
+substitute(A, [X|As], B, [X|Bs]) :-
+    substitute(A, As, B, Bs).
+
 reversed([], []).
 
 reversed([X | Tail], Reversed) :- 
@@ -109,6 +118,11 @@ place(4).
 place(5).
 place(6).
 
+% End for working
+perform(Source, move(Block, Destination), Target) :-
+    substitute(on(Block, From), Source, on(Block, Destination), Target1),
+    append(Target1, [ clear(From) ], Target2),
+    delete(clear(Destination), Target2, Target ).
 
 % Representation
 % inital = [ on(c, at(1, 1)), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(4, 2)), dirty(2,1), dirty(4,2), dirty(5,2), dirty(6,2) ]
