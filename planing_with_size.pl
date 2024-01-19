@@ -4,17 +4,25 @@
 %     findall(at(X, Y), (between(X_1, Size_1, I), X is I + 1), Positions).
 
 
+busy(X,Y, State) :-
+    member( on(_, at(X, Y)), State );
+    member( dirty(X,Y), State).
 
+stabilize(State,Block, X, Y) :-
+    Y = 1.
+
+stabilize(State,Block, X, Y) :-
+    Y_1 is Y - 1,
+    busy(X,Y_1, State).
 
 can(State, move(Block, at(X,Y))) :-
     place(X), place(Y),
     block(Block),
-    \+ member( on(_, at(X, Y)), State ),
-    \+ member( dirty(X,Y), State),
+    \+ busy( X,Y, State),
     member( on(Block, at(X_1, Y_1)), State ),
     Y_b is Y_1+1,
-    \+ member( on(_, at(X_1, Y_b)), State), % Don't can have nothing above
-    \+ member( dirty(X_1,Y_b), State). 
+    \+ busy( X_1, Y_b, State), % Don't can have nothing above. 
+    stabilize(State, Block, X,Y).
 
 
 at(X,Y) :- 
