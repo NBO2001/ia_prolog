@@ -1,88 +1,99 @@
 
-substitute(_, [], _, []).
+reversed([], []).
 
-substitute(A, [A|As], B, [B|Bs]) :-
-    substitute(A, As, B, Bs), !.
+reversed([X | Tail], Reversed) :- 
+    reversed(Tail, ReversedTail),
+    append(ReversedTail, [X], Reversed).
 
-substitute(A, [X|As], B, [X|Bs]) :-
-    substitute(A, As, B, Bs).
+first_anchor([Ac | _], Coords) :-
+    (Ac = dirty(X, Y) ; Ac = on(_, at(X, Y))),
+    Coords = (X-Y), !.
 
-perform(Source, move(Block, Destination), Target) :-
-    substitute(on(Block, From), Source, on(Block, Destination), Target1),
-    append(Target1, [ clear(From) ], Target2),
-    delete(clear(Destination), Target2, Target ).
+first_anchor([_ | Tail], Coords) :-
+    first_anchor(Tail, Coords).
 
-is_object(Object) :-
-    block(Object); place(Object).
+is_possible(Block, (Xr-_), (Xa-_)) :-
+    size(Block, Size),
+    Med is Size/2,
+    E is abs(Xa-Xr),
+    E < Med.
 
-on(Block, Object) :-
-    block(Block), is_object(Object).
+generate_positions(Block, X_1, Y, Positions) :-
+    size(Block, Size),
+    Size_1 is X_1 + Size - 2,
+    X_2 is X_1 - 1,
+    findall((X-Y), (between(X_2, Size_1, I), X is I + 1), Positions).
 
-clear(Object) :-
-    is_object(Object).
+look_positions(State, [], []).
 
-% Append rules
-append([], L, L).
-append([X | Y], Z, [X | W]) :- append(Y, Z, W).
+look_positions(State, [X-Y | Positions], [on(Block, at(X, Y)) | Situation]) :-
+    member(on(Block, at(X, Y)), State),
+    look_positions(State, Positions, Situation).
 
-delete(A, [A|B], B).
-delete(A, [B, C|D], [B|E]) :-
-    delete(A, [C|D], E).
+look_positions(State, [X-Y | Positions], [dirty(X, Y) | Situation]) :-
+    member(dirty(X, Y), State),
+    look_positions(State, Positions, Situation).
 
+look_positions(State, [X-Y | Positions], [empty(X, Y) | Situation]) :-
+    \+ member(on(_, at(X, Y)), State), % change of Block to _
+    \+ member(dirty(X, Y), State),
+    look_positions(State, Positions, Situation).
 
-free(State, Thing) :-
-    is_object(Thing),
-    \+ member(on(_, Thing), State).
+busy_all(State, []).
 
+busy_all(State, [Look | Stack ]) :-
+    \+ member( Look, State),
+    busy_all(State, Stack).
 
-action(State, move(Block, Destination)) :-
-    is_object(Block),
-    \+ Block == Destination,
-    free(State, Block),
-    free(State, Destination).
+busy(X,Y, State) :-
+    member( on(_, at(X, Y)), State );
+    member( dirty(X,Y), State).
 
+find_block(State, Block, X, Y) :-
+    member( on(Block, at(X,Y) ), State).
 
-strips(Initial, Final, Plan) :- strips(Initial, Final, [Initial], Plan).
+stabilize(State,Block, X, Y) :-
+    Y = 1,
+    \+ busy(X,Y, State).
 
-strips(Initial, Final, Visited, Plan) :- 
-    deepening_strips(1, Initial, Final, Visited, Plan).
+stabilize(State,Block, X, Y) :-
+    Y_1 is Y - 1,
+    busy(X,Y_1, State),
+    find_block(State,To, X, Y_1),
+    \+ To == Block.
 
-deepening_strips(Bound, Initial, Final, Visited, Plan) :-
-    bounded_strips(Bound, Initial, Final, Visited, Plan).
+can(Block,Situation,Positions) :-
+    nth0(0, Positions, First), last(Positions, Last),
+    first_anchor(Situation, Coords_1), % Busy or Block more left
+    reversed(Situation, SituationRev),
+    first_anchor(SituationRev, Coords_2), %Busy or Block more rigth
+    is_possible(Block,First, Coords_1),
+    is_possible(Block,Last, Coords_2).
 
-deepening_strips(Bound, Initial, Final, Visited, Plan) :-
-	succ(Bound, Successor),
-    % write(Bound), write("\n"),
-    deepening_strips(Successor, Initial, Final, Visited, Plan).
-
-bounded_strips(_, Final, Final, _, []).
-
-bounded_strips(Bound, Initial, Final, Visited, [Action|Actions]) :-
-    succ(Predecessor, Bound),
-    can(Initial, Action),
-    
-    perform(Initial, Action, Intermediate),
-    \+ member(Intermediate, Visited),
-    bounded_strips(Predecessor, Intermediate, Final, [Intermediate|Visited], Actions).
-
-
-
-solve(Initial, Final, Plan) :- strips(Initial, Final, Plan).
-
-
-can(State, move(Block, Object)) :-
-    is_object(Object),
+goal(State, move(Block, at(X,Y))) :-
+    place(X), place(Y),
     block(Block),
-    Block \== Object.
+    generate_positions(Block, X, Y, Range), % Position at the block will occuped
+    look_positions(State, Range, Situation),
+    busy_all(State, Situation),
+    member( on(Block, at(X_1, Y_1)), State ),
+    Y_b is Y_1+1,
+    \+ busy( X_1, Y_b, State), % Don't can have nothing above. 
+    stabilize(State, Block, X,Y).
+    can(Block,Situation, Range).
+
 
 at(X,Y) :- 
     place(X),
     place(Y).
 
+
+
 % Blocks definition
 block(a).
 block(b).
 block(c).
+block(d).
 
 % Sizes
 size(a, 1).
@@ -98,21 +109,47 @@ place(4).
 place(5).
 place(6).
 
+
 % Representation
-% inital = [ on(c, 1, 1), on(a, 4, 1), on(b, 6, 1), on(d, 4, 2) ]
-% final  = [ on(d, 4, 1), on(a, 5, 2), on(b, 6, 2), on(c,5, 3)]
+% inital = [ on(c, at(1, 1)), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(4, 2)), dirty(2,1), dirty(4,2), dirty(5,2), dirty(6,2) ]
+% final  = [ on(d, at(4, 1)), on(a, at(5, 2)), on(b, at(6, 2)), on(c, at(5, 3))]
 
 
-% can(Block, Object, [on(a, b), on(b, 1), on(c, 2), clear(3), clear(4), clear(a), clear(c)]).
-% can(Block, Object, [on(a, b), on(b, 1), on(c, 2), clear(3), clear(4), clear(a)]).
-% can([on(a, b), on(b, 1), on(c, 2), clear(3), clear(4), clear(a), clear(c)], Action).
+% teste
+% goal([ on(c, at(1, 1)), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(4, 2)), dirty(2,1), dirty(4,2), dirty(5,2), dirty(6,2) ], Action).
+% member( on(_, at(1, 1)), [ on(c, 1, 1), on(a, 4, 1), on(b, 6, 1), on(d, 4, 2) ] ).
 
-% perform([on(a, b), on(b, 1), on(c, 2), clear(3), clear(4), clear(a), clear(c)], move(c, a), Intermediate)
-% Intermediate = [on(a, b), on(b, 1), on(c, a), clear(3), clear(4), clear(a), clear(c)].
+% generate_positions(d,1,1, Pos).
 
-% solve([on(a, b), on(b, 1), on(c, 2), clear(3), clear(4), clear(a), clear(c)], [on(a, b), on(b, c), on(c, 2), clear(1), clear(a), clear(3), clear(4)], Plan).
-% solve([on(a, b), on(b, 1), on(c, 2)], [on(a, b), on(b, c), on(c, 2)], Plan).
+% find_block([ on(c, at(1, 1)), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(4, 2)), dirty(2,1), dirty(4,2), dirty(5,2), dirty(6,2) ], Block, 1,2).
 
-% perform([on(a, b), on(b, 1), on(c, 2), clear(3), clear(4), clear(a), clear(c)], move(c, a), Intermediate).
-% Intermediate = [on(a, b), on(b, 1), on(c, a), clear(3), clear(4), clear(a), clear(c)].
 
+% Action = move(d, at(1, 2))
+
+% look_positions([ on(c, at(1, 1)), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(4, 2)), dirty(2,1), dirty(4,2), dirty(5,2), dirty(6,2) ],[1-2, 2-2, 3-2, 4-2], Situation).
+% look_positions([ on(c, at(1, 1)), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(4, 2)), dirty(2,1), dirty(4,2), dirty(5,2), dirty(6,2) ],[1-1, 2-1, 3-1, 4-1], Situation).
+
+% busy_all([ on(c, at(1, 1)), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(4, 2)), dirty(2,1), dirty(4,2), dirty(5,2), dirty(6,2) ], [empty(1, 2), empty(2, 2), empty(3, 2) ]).
+
+% Tests Stablity
+% generate_positions(d,1,1, Pos), look_positions([ on(c, at(1, 1)), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(4, 2)), dirty(2,1), dirty(4,2), dirty(5,2), dirty(6,2) ],Pos, Situation).
+
+
+
+% Situation = [on(c, at(1, 1)), dirty(2, 1), empty(3, 1)] ;
+% reversed([on(c, at(1, 1)), dirty(2, 1), empty(3, 1)], ListRv).
+% first_anchor([empty(3, 1), dirty(2, 1), on(c, at(1, 1))], Coords).
+% first_anchor([on(c, at(1, 1)), dirty(2, 1), empty(3, 1)], Coords).
+% generate_positions(d, 1, 1, Pos), nth0(0, Pos, First), last(Pos, Last).
+
+
+% Block, where is the maximun extreme of the block
+
+
+% first_anchor([empty(3, 1), dirty(2, 1), on(c, at(1, 1))], Coords),  generate_positions(d, 1, 1, Pos), nth0(0, Pos, First), is_possible(d, First, Coords).
+
+% can(d,[on(c, at(1, 1)), dirty(2, 1), empty(3, 1)],[1-1, 2-1, 3-1]).
+% can(d,[on(c, at(1, 1)), empty(2, 1), empty(3, 1)],[1-1, 2-1, 3-1]).
+% can(d,[empty(1, 1), on(c, at(2, 1)), empty(3, 1)],[1-1, 2-1, 3-1]).
+% can(d,[empty(1, 1), empty(2, 1),  on(c, at(3, 1))],[1-1, 2-1, 3-1]).
+% can(d,[on(a, at(1, 1)), empty(2, 1),  on(c, at(3, 1))],[1-1, 2-1, 3-1]).
