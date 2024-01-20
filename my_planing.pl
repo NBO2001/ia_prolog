@@ -87,6 +87,15 @@ place(1).
 place(2).
 place(3).
 place(4).
+place(5).
+place(6).
+place(7).
+place(8).
+
+state1([on(a, b), on(b, 1), on(c, 2), clear(3), clear(4), clear(a), clear(c), clear(5), clear(6), clear(7), clear(8)]).
+final1([on(a, b), on(b, c), on(c, 2), clear(1), clear(a), clear(3), clear(4), clear(5), clear(6), clear(7), clear(8)]).
+
+% state1(Initial), final1(Final), solve(Initial, Final, Plan).
 
 % can(Block, Object, [on(a, b), on(b, 1), on(c, 2), clear(3), clear(4), clear(a), clear(c)]).
 % can(Block, Object, [on(a, b), on(b, 1), on(c, 2), clear(3), clear(4), clear(a)]).

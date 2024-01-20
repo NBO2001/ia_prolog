@@ -71,6 +71,8 @@ stabilize(State,Block, X, Y) :-
     find_block(State,To, X, Y_1),
     \+ To == Block.
 
+can(Block, [], []).
+
 can(Block,Situation,Positions) :-
     nth0(0, Positions, First), last(Positions, Last),
     first_anchor(Situation, Coords_1), % Busy or Block more left
@@ -79,9 +81,15 @@ can(Block,Situation,Positions) :-
     is_possible(Block,First, Coords_1),
     is_possible(Block,Last, Coords_2).
 
+have_space(Block, X) :-
+    size(Block, Size),
+    F is X + Size - 1,
+    place(F).
+
 goal(State, move(Block, at(X,Y))) :-
     place(X), place(Y),
     block(Block),
+    have_space(Block, X),
     generate_positions(Block, X, Y, Range), % Position at the block will occuped
     look_positions(State, Range, Situation),
     busy_all(State, Situation),
@@ -132,7 +140,7 @@ bounded_strips(Bound, Initial, Final, Visited, [Action|Actions]) :-
     succ(Predecessor, Bound),
     goal(Initial, Action),
     perform(Initial, Action, Intermediate),
-    write(Action), write("\n"),
+    write(Intermediate), write("\n"),
     \+ member(Intermediate, Visited),
     bounded_strips(Predecessor, Intermediate, Final, [Intermediate|Visited], Actions).
 
@@ -161,6 +169,11 @@ place(5).
 place(6).
 
 
+state1(    [ on(c, at(1, 1)), dirty(2,1), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(4, 2)), dirty(5,2), dirty(6,2) ]).
+finalState([ on(c, at(1, 1)), dirty(2,1), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(1, 2)), dirty(2,2), dirty(3,2) ]).
+finalState2([ on(c, at(5, 3)), dirty(6,3), on(a, at(5, 2)), on(b, at(6, 2)), on(d, at(4, 1)), dirty(5,1), dirty(6,1) ]).
+
+
 % perform([ on(c, at(1, 1)), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(4, 2)), dirty(2,1), dirty(4,2), dirty(5,2), dirty(6,2) ], move(d, at(1, 2)), Target).
 % Representation
 % inital = [ on(c, at(1, 1)), dirty(2,1), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(4, 2)), dirty(5,2), dirty(6,2) ]
@@ -170,8 +183,16 @@ place(6).
 
 % plan([ on(c, at(1, 1)), dirty(2,1), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(4, 2)), dirty(5,2), dirty(6,2) ], [ on(c, at(1, 1)), dirty(2,1), on(a, at(1, 3)), on(b, at(6, 1)), on(d, at(1, 2)), dirty(2,2), dirty(3,2) ], Plan).
 
+% plan( [ on(c, at(1, 1)), dirty(2,1), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(4, 2)), dirty(5,2), dirty(6,2) ], [ on(c, at(5, 3)), dirty(6,3), on(a, at(5, 2)), on(b, at(6, 2)), on(d, at(4, 1)), dirty(5,1), dirty(6,1) ], Plan).
+
+
 % teste
+
 % goal([ on(c, at(1, 1)), dirty(2,1), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(4, 2)), dirty(5,2), dirty(6,2) ], Action).
+% perform([ on(c, at(1, 1)), dirty(2,1), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(4, 2)), dirty(5,2), dirty(6,2) ],  move(d, at(1, 2)), Intermediate).
+
+% goal([on(c, at(1, 1)), dirty(2, 1), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(1, 2)), dirty(2, 2), dirty(3, 2)], Action).
+
 % member( on(_, at(1, 1)), [ on(c, 1, 1), on(a, 4, 1), on(b, 6, 1), on(d, 4, 2) ] ).
 
 % generate_positions(d,1,1, Pos).
