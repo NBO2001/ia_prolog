@@ -1,4 +1,5 @@
-
+:- discontiguous can/3.
+:- style_check(-singleton).
 
 substitute(_, [], _, []).
 
@@ -170,12 +171,17 @@ place(6).
 
 
 state1(    [ on(c, at(1, 1)), dirty(2,1), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(4, 2)), dirty(5,2), dirty(6,2) ]).
-state2(    [ on(c, at(1, 1)), dirty(2,1), on(a, at(1, 2)), on(b, at(2, 2)), on(d, at(4, 1)), dirty(5,1), dirty(6,1) ] ).
-
 finalState([ on(c, at(1, 1)), dirty(2,1), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(1, 2)), dirty(2,2), dirty(3,2) ]).
+
+
+state2(    [ on(c, at(1, 1)), dirty(2,1), on(a, at(1, 2)), on(b, at(2, 2)), on(d, at(4, 1)), dirty(5,1), dirty(6,1) ] ).
 finalState2([ on(c, at(5, 2)), dirty(6,2), on(a, at(5, 3)), on(b, at(6, 3)), on(d, at(4, 1)), dirty(5,1), dirty(6,1) ]).
 
+
+% state1(State), finalState(Final), plan(State, Final, Plan).
+
 % state2(State), finalState2(Final), plan(State, Final, Plan).
+% state1(State), finalState1(Final), plan(State, Final, Plan).
 
 % perform([ on(c, at(1, 1)), on(a, at(4, 1)), on(b, at(6, 1)), on(d, at(4, 2)), dirty(2,1), dirty(4,2), dirty(5,2), dirty(6,2) ], move(d, at(1, 2)), Target).
 % Representation
